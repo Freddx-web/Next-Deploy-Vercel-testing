@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  addresses Address[]
+  orders    Order[]
+  
+  @@map("users")
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  name       String
+  street     String
+  city       String
+  postalCode String
+  country    String
+  phone      String
+  isDefault  Boolean @default(false)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("addresses")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  products Product[]
+  
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  stock       Int
+  categoryId  String
+  images      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  category    Category @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  albumPhotos AlbumPhoto[]
+  
+  @@map("products")
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  userId    String
+  status    OrderStatus @default(PENDING)
+  total     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User       @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+  
+  @@map("order_items")
+}
+
+model Album {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  coverImage  String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  photos      AlbumPhoto[]
+  
+  @@map("albums")
+}
+
+model AlbumPhoto {
+  id        String @id @default(cuid())
+  albumId   String
+  productId String
+  caption   String?
+  sortOrder Int    @default(0)
+  
+  album     Album   @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+  
+  @@map("album_photos")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
